@@ -89,10 +89,10 @@ app.post('/api/convert', async (req, res) => {
     res.json({ result: parseFloat(result.toFixed(2)) });
   } catch (error) {
     console.error('Error converting currency:', error);
-    console.error('Error details:', error.message);
+    console.error('Error details:', (error as Error).message);
     res.status(500).json({ 
       error: 'Failed to convert currency',
-      details: error.message 
+      details: (error as Error).message 
     });
   }
 });
