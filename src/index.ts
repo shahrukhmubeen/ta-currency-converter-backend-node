@@ -35,6 +35,20 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/currency-
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
+// Debug route to check MongoDB connection and environment variables
+app.get('/api/status', (req, res) => {
+  res.json({
+    mongodb: {
+      connected: mongoose.connection.readyState === 1,
+      state: mongoose.connection.readyState,
+      hasMongoUri: !!process.env.MONGODB_URI,
+      hasApiKey: !!process.env.CURRENCY_API_KEY
+    },
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/api/currencies', async (req, res) => {
   try {
     const response = await axios.get('https://api.freecurrencyapi.com/v1/currencies', {
