@@ -10,11 +10,11 @@ const PORT = process.env.PORT || 3000;
 
 // Enable CORS for all origins (Vercel-friendly)
 app.use(cors({
-  origin: true,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+  origin: '*',
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: '*'
 }));
+
 
 // Handle preflight requests
 app.options('*', cors());
