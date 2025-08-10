@@ -9,12 +9,29 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Enable CORS for all origins (Vercel-friendly)
-app.use(cors({
-  origin: '*',
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: '*'
-}));
+// app.use(cors({
+//   origin: '*',
+//   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+//   allowedHeaders: '*'
+// }));
 
+const allowedOrigins = [
+  'https://ta-currency-converter-nine.vercel.app', // tumhara frontend
+  'http://localhost:4200' // local dev
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+}));
 
 // Handle preflight requests
 app.options('*', cors());
