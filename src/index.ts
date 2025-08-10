@@ -43,34 +43,49 @@ app.get('/api/status', (req, res) => {
     status: 'Running',
     storage: 'localStorage (frontend)',
     hasApiKey: !!process.env.CURRENCY_API_KEY,
+    apiKeyLength: process.env.CURRENCY_API_KEY ? process.env.CURRENCY_API_KEY.length : 0,
     environment: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    cors: 'enabled for all origins'
   });
 });
 
 app.get('/api/currencies', async (req, res) => {
   try {
+    const apiKey = process.env.CURRENCY_API_KEY || '4E0VK7BnkdeUuh1vegAt808v2IUjzUR6lxcvBMT2';
+    console.log('Using API key length:', apiKey.length);
+    console.log('API key exists:', !!apiKey);
+    
     const response = await axios.get('https://api.freecurrencyapi.com/v1/currencies', {
       headers: {
-        'apikey': process.env.CURRENCY_API_KEY || '4E0VK7BnkdeUuh1vegAt808v2IUjzUR6lxcvBMT2'
+        'apikey': apiKey
       }
     });
     res.json(response.data);
-  } catch (error) {
-    console.error('Error fetching currencies:', error);
-    res.status(500).json({ error: 'Failed to fetch currencies' });
+  } catch (error: any) {
+    console.error('Error fetching currencies:', error.message);
+    console.error('Error status:', error.response?.status);
+    console.error('Error data:', error.response?.data);
+    
+    res.status(error.response?.status || 500).json({ 
+      error: 'Failed to fetch currencies',
+      details: error.response?.data || error.message,
+      apiKeyConfigured: !!process.env.CURRENCY_API_KEY
+    });
   }
 });
 
 app.post('/api/convert', async (req, res) => {
   try {
     const { from, to, amount } = req.body;
+    const apiKey = process.env.CURRENCY_API_KEY || '4E0VK7BnkdeUuh1vegAt808v2IUjzUR6lxcvBMT2';
     
     console.log(`Converting ${amount} ${from} to ${to}`);
+    console.log('Using API key length:', apiKey.length);
     
     const response = await axios.get('https://api.freecurrencyapi.com/v1/latest', {
       headers: {
-        'apikey': process.env.CURRENCY_API_KEY || '4E0VK7BnkdeUuh1vegAt808v2IUjzUR6lxcvBMT2'
+        'apikey': apiKey
       },
       params: {
         base_currency: from,
@@ -96,12 +111,15 @@ app.post('/api/convert', async (req, res) => {
       exchangeRate: exchangeRate,
       timestamp: new Date().toISOString()
     });
-  } catch (error) {
-    console.error('Error converting currency:', error);
-    console.error('Error details:', (error as Error).message);
-    res.status(500).json({ 
+  } catch (error: any) {
+    console.error('Error converting currency:', error.message);
+    console.error('Error status:', error.response?.status);
+    console.error('Error data:', error.response?.data);
+    
+    res.status(error.response?.status || 500).json({ 
       error: 'Failed to convert currency',
-      details: (error as Error).message 
+      details: error.response?.data || error.message,
+      apiKeyConfigured: !!process.env.CURRENCY_API_KEY
     });
   }
 });
