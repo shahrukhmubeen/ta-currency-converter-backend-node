@@ -2,27 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import axios from 'axios';
-import mongoose from 'mongoose';
 
 dotenv.config();
-
-interface ConversionRecord {
-  fromCurrency: string;
-  toCurrency: string;
-  amount: number;
-  result: number;
-  timestamp: Date;
-}
-
-const conversionRecordSchema = new mongoose.Schema<ConversionRecord>({
-  fromCurrency: { type: String, required: true },
-  toCurrency: { type: String, required: true },
-  amount: { type: Number, required: true },
-  result: { type: Number, required: true },
-  timestamp: { type: Date, default: Date.now }
-});
-
-const ConversionRecord = mongoose.model('ConversionRecord', conversionRecordSchema);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,20 +11,29 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/currency-converter')
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// No database connection needed - using localStorage on frontend
 
-// Debug route to check MongoDB connection and environment variables
+// Root route for health check
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'TA Solutions Currency Converter API',
+    status: 'Running',
+    endpoints: {
+      status: '/api/status',
+      currencies: '/api/currencies',
+      convert: '/api/convert (POST)',
+      history: '/api/history'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Status route for health check
 app.get('/api/status', (req, res) => {
   res.json({
-    mongodb: {
-      connected: mongoose.connection.readyState === 1,
-      state: mongoose.connection.readyState,
-      hasMongoUri: !!process.env.MONGODB_URI,
-      hasApiKey: !!process.env.CURRENCY_API_KEY
-    },
+    status: 'Running',
+    storage: 'localStorage (frontend)',
+    hasApiKey: !!process.env.CURRENCY_API_KEY,
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString()
   });
@@ -91,16 +81,12 @@ app.post('/api/convert', async (req, res) => {
     
     console.log(`Exchange rate: ${exchangeRate}, Result: ${result}`);
     
-    // Save the conversion record
-    const conversionRecord = new ConversionRecord({
-      fromCurrency: from,
-      toCurrency: to,
-      amount: parseFloat(amount),
-      result: parseFloat(result.toFixed(2))
+    // Return result - history will be stored in localStorage on frontend
+    res.json({ 
+      result: parseFloat(result.toFixed(2)),
+      exchangeRate: exchangeRate,
+      timestamp: new Date().toISOString()
     });
-    await conversionRecord.save();
-
-    res.json({ result: parseFloat(result.toFixed(2)) });
   } catch (error) {
     console.error('Error converting currency:', error);
     console.error('Error details:', (error as Error).message);
@@ -111,16 +97,14 @@ app.post('/api/convert', async (req, res) => {
   }
 });
 
-app.get('/api/history', async (req, res) => {
-  try {
-    const records = await ConversionRecord.find()
-      .sort({ timestamp: -1 })
-      .limit(10);
-    res.json(records);
-  } catch (error) {
-    console.error('Error fetching history:', error);
-    res.status(500).json({ error: 'Failed to fetch history' });
-  }
+app.get('/api/history', (req, res) => {
+  // History is now stored in localStorage on frontend
+  // This endpoint returns info about localStorage usage
+  res.json({
+    message: 'Conversion history is stored in browser localStorage',
+    storage: 'frontend',
+    instructions: 'Use localStorage.getItem("conversionHistory") to access history'
+  });
 });
 
 app.listen(PORT, () => {
