@@ -8,7 +8,16 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:4200',
+    'https://ta-currency-converter-nine.vercel.app',
+    'https://ta-currency-converter-backend-node-ci69wzeuq.vercel.app'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'apikey']
+}));
 app.use(express.json());
 
 // No database connection needed - using localStorage on frontend
